@@ -9,22 +9,26 @@ local scene = composer.newScene()
 
 function scene:create( event )
 	local sceneGroup = self.view
-	local background = display.newRect( display.contentCenterX, display.contentCenterY, display.contentWidth, display.contentHeight )
+
+	local BGUI = display.newGroup();
+
+	local background = display.newRect(BGUI, display.contentCenterX, display.contentCenterY, display.contentWidth, display.contentHeight )
 	local w,h = display.contentWidth, display.contentHeight/2
 
 	physics.start()
     physics.setGravity( 0, 0 )
 
-	local sky = display.newImageRect("Content/sky.png", display.contentWidth, display.contentHeight)
+	local sky = display.newImageRect(BGUI, "Content/sky.png", display.contentWidth, display.contentHeight)
 	sky.x, sky.y = display.contentWidth/2, display.contentHeight/2
 
-	local ground = display.newImageRect("Content/ground.png", display.contentWidth, 300)
+	local ground = display.newImageRect(BGUI, "Content/ground.png", display.contentWidth, 300)
 	ground.x, ground.y = display.contentWidth/2, display.contentHeight-150
 
     local score = 0
-    local showScore = display.newText(score, display.contentWidth*0.3, display.contentHeight*0.2)
+    local showScore = display.newText(score, display.contentWidth*0.25, display.contentHeight*0.15, 500, 100)
+    showScore.align = "right"
     showScore:setFillColor(0)
-    showScore.size = 50
+    showScore.size = 80
 
     local function scoreUp ( event )
     	score = score + 1
@@ -44,9 +48,9 @@ function scene:create( event )
 	local playUI = {}
 	playUI[0] = display.newImageRect("Content/play.png", 55, 55)
 	playUI[0].x, playUI[0].y = 1180, 40
+	playUI[0].alpha = 0
 	playUI[1] = display.newImageRect("Content/stop.png", 55, 55)
 	playUI[1].x, playUI[1].y = 1180, 40
-	playUI[1].alpha = 0
 
 	local UI = {}
 	UI[0] = display.newRect(640, 360, 600, 300)
@@ -60,50 +64,47 @@ function scene:create( event )
 		UI[i].alpha = 0
 	end
 
-	local dino_sheet = graphics.newImageSheet( "Content/player.png", { width = 170, height = 240, numFrames = 5 })
+	local dino_sheet = graphics.newImageSheet( "Content/player.png", { width = 240, height = 240, numFrames = 6 })
 	local sepuencesData =
 	{
 		{ name = "stand",start = 1, count = 1},
-		{ name = "run",  start = 1, count = 4, time = 400 },
-		{ name = "jump", start = 5, count = 1, loopCount = 1, time = 600},
+		{ name = "run",  start = 1, count = 3, time = 400 },
+		{ name = "jump", start = 4, count = 1, loopCount = 1, time = 1000},
+		{ name = "slide", start = 5, count = 1, time = 400},
 		{ name = "hurt", start = 6, count = 1}
 	}
 
 	local dino = display.newSprite( dino_sheet, sepuencesData )
-	dino.x, dino.y = display.contentCenterX, display.contentCenterY
-    dino:play()
+	dino.x, dino.y = display.contentWidth*0.2, display.contentHeight*0.5
 
     local obstacle = {}
 	obstacle[1] = display.newImageRect("Content/bone1.png", 69, 95)
 	obstacle[2] = display.newImageRect("Content/bone2.png", 131, 115)
 	obstacle[3] = display.newImageRect("Content/bone3.png", 117, 84)
-	obstacle[4] = display.newImageRect("Content/back1.png", 368, 136)
-	obstacle[5] = display.newImageRect("Content/back2.png", 375, 101)
-	obstacle[6] = display.newImageRect("Content/cloud1.png", 295, 82)
-	obstacle[7] = display.newImageRect("Content/cloud2.png", 188, 76)
+	obstacle[4] = display.newImageRect("Content/Ptero.png", 276, 119)
 
-	for i = 1, 5, 1 do 
-		obstacle[i].x, obstacle[i].y = display.contentWidth+200, display.contentHeight-200
+	for i = 1, 3, 1 do 
+		obstacle[i].x, obstacle[i].y = display.contentWidth+200, display.contentHeight-280
 	end
-	for i = 6, 7, 1 do 
-		obstacle[i].x, obstacle[i].y = display.contentWidth+200, 250
-	end
+	obstacle[4].x, obstacle[4].y = display.contentWidth+200, 250
+
 
 	local cooltime
 	local obs_idx
 
     local function dino_spriteListenr( event )
     	if event.phase == "began" then
-    		if dino.sequence == "jump" then
-	    	elseif dino.sequence == "hurt" then
+    		--if dino.sequence == "jump" then
+
+	    	--else
+	    	if dino.sequence == "hurt" then
 	    		dino:setFillColor(0.75, 0.5, 0.5)
 	    		timer.cancel( scoreEvent )
-	    		display.remove( jumpButton )
+	    		--display.remove( jumpButton )
 	    	end
-
     	elseif event.phase == "ended" then
-    		dino:setSequence( "run" )
-    		dino:play()
+	    	dino:setSequence( "run" )
+	    	dino:play()
     	end
     end
     dino:addEventListener( "sprite", dino_spriteListenr )
@@ -174,23 +175,26 @@ function scene:create( event )
 	-- composer.gotoScene("end")
 
     local function playerDown( event )
-    	transition.to( dino, { time=600,  y=(dino.y+50)} )
+    	transition.to( dino, { time=500,  y=(dino.y+150) } )
     end
 
 	local function onKeyJumpEvent( event )
 	 	if ( event.keyName == "space" ) and ( event.phase == "down" ) and (dino.y == h) then
-	 		transition.to( dino, { time=600,  y=(dino.y-50), onComplete = playerDown } )
+	 		transition.to( dino, { time=500,  y=(dino.y-150), onComplete = playerDown } )
+	 		dino:setSequence( "jump" )
+	    	dino:play()
 	 		print("jump")
 	    end
 	end
 
 	local function onKeySlideEvent( event )
-	 	if ( event.keyName == "down" ) and ( event.phase == "down" ) and (dino.y == h) then
-	 		transition.to( dino, { time=50, rotation = -90,  y=(dino.y+20) } )
+	 	if ( event.keyName == "down" ) and ( event.phase == "down" ) then
+	 		dino:setSequence( "slide" )
 	 		print("slide")
 	    end
-	    if ( event.keyName == "down" ) and ( event.phase ~= "submitted" ) and (dino.y == h+20) then
- 			transition.to( dino, { time=300,  y=(dino.y-20), rotation = 0} )
+	    if ( event.keyName == "down" ) and ( event.phase == "up" ) then
+ 			dino:setSequence( "run" )
+	 		dino:play()
  		end
 	end
 
@@ -199,7 +203,7 @@ function scene:create( event )
 
 	function start()
 		cooltime = math.random(1, 4)--0.5~2초 사이의 간격으로 스폰
-		obs_idx = math.random(1, 7)--1~5번 장애물 중 랜덤선택
+		obs_idx = math.random(1, 4)--1~5번 장애물 중 랜덤선택
 		print("spawn time = "..cooltime)
 		print("obstacle idx is "..obs_idx)
 		timer.performWithDelay(cooltime*500, spawn_obstacle)
@@ -225,15 +229,16 @@ function scene:create( event )
 	end
 	
 	start()
+	tapPlay()
 
-	sceneGroup:insert( background )
-	sceneGroup:insert( showScore )
-    sceneGroup:insert( dino )
-    
+	sceneGroup:insert( BGUI )
+	
     for i = 0, #bgmUI do sceneGroup:insert( bgmUI[i] ) end
-    for i = 0, #playUI do sceneGroup:insert( playUI[i] ) end
     for i = 0, #UI do sceneGroup:insert( UI[i] ) end
+    for i = 0, #playUI do sceneGroup:insert( playUI[i] ) end
 
+    sceneGroup:insert( showScore )
+    sceneGroup:insert( dino )
 end
 
 function scene:show( event )
