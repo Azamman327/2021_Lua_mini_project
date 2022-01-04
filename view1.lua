@@ -89,6 +89,11 @@ function scene:create( event )
 	obstacle[4].x, obstacle[4].y = display.contentWidth+200, 250
 
 
+	-- 타이머들
+	local spawnTimer
+	local resetTimer
+
+
 	local cooltime
 	local obs_idx
 
@@ -129,9 +134,6 @@ function scene:create( event )
 		playUI[0].alpha = 0
 		playUI[1].alpha = 1
 
-		soundOn = 0
-		soundONOFF()
-
 		for i = 0, #UI do
 			UI[i].alpha = 0
 		end
@@ -139,22 +141,28 @@ function scene:create( event )
 		scoreEvent = timer.performWithDelay( 250, scoreUp, 0 )
 		dino:setSequence( "run" )
 	    dino:play()
+
+	    physics.start()
+	    timer.resume(spawnTimer)
+	    timer.resume(resetTimer)
+	    timer.resume(scoreEvent)
 	end
 
 	local function tapStop( ... )
 		playUI[0].alpha = 1
 		playUI[1].alpha = 0
 
-		soundOn = 1
-		soundONOFF()
-
 		for i = 0, #UI do
 			UI[i].alpha = 1
 		end
 
-		timer.cancel( scoreEvent )
 		dino:setSequence( "stand" )
 	    dino:play()
+
+	    physics.pause()
+	    timer.pause(spawnTimer)
+	    timer.pause(resetTimer)
+	    timer.pause(scoreEvent)
 	end
 
 	local function tapX( ... )
@@ -206,7 +214,8 @@ function scene:create( event )
 		obs_idx = math.random(1, 4)--1~5번 장애물 중 랜덤선택
 		print("spawn time = "..cooltime)
 		print("obstacle idx is "..obs_idx)
-		timer.performWithDelay(cooltime*500, spawn_obstacle)
+
+		spawnTimer = timer.performWithDelay(cooltime*500, spawn_obstacle)
 	end
 
 	function obs_reset()--다시 화면 밖으로(초기상태로)
@@ -225,20 +234,20 @@ function scene:create( event )
 		physics.addBody( obstacle[obs_idx], "dynamic" )
 		obstacle[obs_idx]:setLinearVelocity( -500, 0 )--장애물 이동
 
-		timer.performWithDelay(4000, obs_reset)
+		resetTimer = timer.performWithDelay(4000, obs_reset)
 	end
 	
 	start()
-	tapPlay()
+	scoreEvent = timer.performWithDelay( 250, scoreUp, 0 )
 
 	sceneGroup:insert( BGUI )
 	
-    for i = 0, #bgmUI do sceneGroup:insert( bgmUI[i] ) end
-    for i = 0, #UI do sceneGroup:insert( UI[i] ) end
-    for i = 0, #playUI do sceneGroup:insert( playUI[i] ) end
-
     sceneGroup:insert( showScore )
     sceneGroup:insert( dino )
+
+   	for i = 0, #bgmUI do sceneGroup:insert( bgmUI[i] ) end
+    for i = 0, #UI do sceneGroup:insert( UI[i] ) end
+    for i = 0, #playUI do sceneGroup:insert( playUI[i] ) end
 end
 
 function scene:show( event )
