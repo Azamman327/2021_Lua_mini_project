@@ -11,7 +11,6 @@ function scene:create( event )
 	local sceneGroup = self.view
 
 	local BGUI = display.newGroup();
-
 	local background = display.newRect(BGUI, display.contentCenterX, display.contentCenterY, display.contentWidth, display.contentHeight )
 	local w,h = display.contentWidth, display.contentHeight/2
 
@@ -88,12 +87,9 @@ function scene:create( event )
 	end
 	obstacle[4].x, obstacle[4].y = display.contentWidth+200, 250
 
-
 	-- 타이머들
 	local spawnTimer
 	local resetTimer
-
-
 	local cooltime
 	local obs_idx
 
@@ -190,20 +186,21 @@ function scene:create( event )
 	 	if ( event.keyName == "space" ) and ( event.phase == "down" ) and (dino.y == h) then
 	 		transition.to( dino, { time=500,  y=(dino.y-150), onComplete = playerDown } )
 	 		dino:setSequence( "jump" )
-	    	dino:play()
 	 		print("jump")
 	    end
 	end
 
 	local function onKeySlideEvent( event )
 	 	if ( event.keyName == "down" ) and ( event.phase == "down" ) then
+	 		transition.pause( dino )
+    		dino.y = display.contentHeight*0.5
 	 		dino:setSequence( "slide" )
 	 		print("slide")
 	    end
 	    if ( event.keyName == "down" ) and ( event.phase == "up" ) then
  			dino:setSequence( "run" )
-	 		dino:play()
  		end
+ 		dino:play()
 	end
 
 	Runtime:addEventListener( "key", onKeyJumpEvent )
@@ -237,11 +234,12 @@ function scene:create( event )
 		resetTimer = timer.performWithDelay(4000, obs_reset)
 	end
 	
+	dino:setSequence( "run" )
+	dino:play()
 	start()
 	scoreEvent = timer.performWithDelay( 250, scoreUp, 0 )
 
 	sceneGroup:insert( BGUI )
-	
     sceneGroup:insert( showScore )
     sceneGroup:insert( dino )
 
