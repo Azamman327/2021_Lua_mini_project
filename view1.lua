@@ -17,10 +17,10 @@ function scene:create( event )
 		local background = display.newRect(BGUI, display.contentCenterX, display.contentCenterY, display.contentWidth, display.contentHeight )
 		local w,h = display.contentWidth, display.contentHeight/2
 
-		local sky = display.newImageRect(BGUI, "Content/sky.png", display.contentWidth, display.contentHeight)
+		local sky = display.newImageRect(BGUI, "Content/Sky.png", display.contentWidth, display.contentHeight)
 		sky.x, sky.y = display.contentWidth/2, display.contentHeight/2
 
-		local ground = display.newImageRect(BGUI, "Content/ground.png", display.contentWidth, 300)
+		local ground = display.newImageRect(BGUI, "Content/Ground.png", display.contentWidth, 300)
 		ground.x, ground.y = display.contentWidth/2, display.contentHeight-150
 
     -- UI
@@ -66,7 +66,7 @@ function scene:create( event )
 	    local scoreEvent
 
     -- DINO
-		local dino_sheet = graphics.newImageSheet( "Content/player.png", { width = 240, height = 240, numFrames = 6 })
+		local dino_sheet = graphics.newImageSheet( "Content/Player.png", { width = 240, height = 240, numFrames = 6 })
 		local sepuencesData =
 		{
 			{ name = "stand",start = 1, count = 1},
@@ -130,13 +130,15 @@ function scene:create( event )
 				UI[i].alpha = 0
 			end
 
+			-- 점수&애니메이션에서 추가 ☆
+			timer.resume(scoreEvent)
 			dino:setSequence( "run" )
 		    dino:play()
 
+		    -- 장애물 이동에서 추가 ☆
 		    physics.start()
 		    timer.resume(spawnTimer)
 		    timer.resume(resetTimer)
-		    timer.resume(scoreEvent)
 		end
 
 		local function tapStop( ... )
@@ -147,13 +149,15 @@ function scene:create( event )
 				UI[i].alpha = 1
 			end
 
+			-- 점수&애니메이션에서 추가 ☆
+		   	timer.resume(scoreEvent)			
 			dino:setSequence( "stand" )
 		    dino:play()
 
+		   	-- 장애물 이동에서 추가 ☆
 		    physics.pause()
 		    timer.pause(spawnTimer)
 		    timer.pause(resetTimer)
-		    timer.pause(scoreEvent)
 		end
 
 		local function tapX( ... )
@@ -177,7 +181,7 @@ function scene:create( event )
 	    local function dino_spriteListenr( event )
 	    	if event.phase == "began" then
 		    	if dino.sequence == "hurt" then
-		    		dino:setFillColor(0.75, 0.5, 0.5)
+		    		dino.alpha = 0.8
 		    	end
 	    	elseif event.phase == "ended" then
 		    	dino:setSequence( "run" )
@@ -215,13 +219,6 @@ function scene:create( event )
 		Runtime:addEventListener( "key", onKeyJumpEvent )
 		Runtime:addEventListener( "key", onKeySlideEvent )
 
-
-		-- 장애물과 충돌했을 때
-		-- dino:setSequence( "hurt" )
-		-- dino:play()
-		-- composer.setVariable("score", score)
-		-- composer.gotoScene("end")
-
 	-- OBSTACLE
 		function obs_start()
 			cooltime = math.random(1, 4)--0.5~2초 사이의 간격으로 스폰
@@ -253,11 +250,13 @@ function scene:create( event )
 
 
 -- 함수 호출부 (게임 시작할때 호출하는 함수) --
+	-- 점수&애니메이션에서 추가
 	scoreEvent = timer.performWithDelay( 250, scoreUp, 0 )
-
+	
 	dino:setSequence( "run" )
 	dino:play()
 
+	-- 장애물 이동에서 추가
 	obs_start()
 
 	physics.start()
