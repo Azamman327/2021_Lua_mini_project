@@ -7,6 +7,11 @@
 local composer = require( "composer" )
 local scene = composer.newScene()
 
+-- Timer
+local spawnTimer
+local resetTimer
+local scoreEvent
+
 function scene:create( event )
 	local sceneGroup = self.view
 
@@ -27,14 +32,23 @@ function scene:create( event )
 
     	-- BGM
 		local music = audio.loadStream( "Content/music1.ogg" )
-		local bgMusic
-		local soundOn = 0
+		local bgMusic = audio.play(music, { channel=1, loops=-1, fadein=5000 })
+		audio.setVolume( bgMusic , 1 )
+
+		local soundOn = 1
 		local bgmUI = {}
 		bgmUI[0] = display.newImageRect("Content/on.png", 55, 55)
 		bgmUI[0].x, bgmUI[0].y = 1240, 40
-		bgmUI[0].alpha = 0
+		bgmUI[0].alpha = 1
 		bgmUI[1] = display.newImageRect("Content/off.png", 55, 55)
 		bgmUI[1].x, bgmUI[1].y = 1240, 40
+		bgmUI[1].alpha = 0
+
+		-- 효과음
+		local jumpSound  = audio.loadSound( "Content/Audio/Jump.wav" ) 
+		local dieSound  = audio.loadSound( "Content/Audio/Die.wav" ) 
+		local landSound  = audio.loadSound( "Content/Audio/Land.wav" ) 
+		local buttonSound = audio.loadSound( "Content/Audio/Button.wav" ) 
 
 		-- PLAY
 		local playUI = {}
@@ -63,10 +77,10 @@ function scene:create( event )
 	    showScore:setFillColor(0)
 	    showScore.size = 80
 
-	    local scoreEvent
+	    
 
     -- DINO
-		local dino_sheet = graphics.newImageSheet( "Content/Player.png", { width = 240, height = 240, numFrames = 6 })
+		local dino_sheet = graphics.newImageSheet( "Content/Playerd.png", { width = 214, height = 217, numFrames = 6 })
 		local sepuencesData =
 		{
 			{ name = "stand",start = 1, count = 1},
@@ -90,11 +104,7 @@ function scene:create( event )
 		for i = 1, 3, 1 do 
 			obstacle[i].x, obstacle[i].y = display.contentWidth+200, display.contentHeight-280
 		end
-		obstacle[4].x, obstacle[4].y = display.contentWidth+200, 250
-
-		-- Timer
-		local spawnTimer
-		local resetTimer
+		obstacle[4].x, obstacle[4].y = display.contentWidth+200, 200
 
 		local cooltime
 		local obs_idx
@@ -110,12 +120,12 @@ function scene:create( event )
 				soundOn = 0
 				bgmUI[0].alpha = 0
 				bgmUI[1].alpha = 1
-				audio.stop(bgMusic)
+				audio.pause(bgMusic)
 			else
 				soundOn = 1
 				bgmUI[0].alpha = 1
 				bgmUI[1].alpha = 0
-				bgMusic = audio.play(music, { channel=1, loops=-1, fadein=5000 })
+				audio.resume( bgMusic)
 			end
 		end
 		bgmUI[0]:addEventListener("tap", soundONOFF)
@@ -123,6 +133,8 @@ function scene:create( event )
 
 		-- PLAY
 		local function tapPlay( ... )
+			
+			audio.play( buttonSound )
 			playUI[0].alpha = 0
 			playUI[1].alpha = 1
 
@@ -142,6 +154,8 @@ function scene:create( event )
 		end
 
 		local function tapStop( ... )
+
+			audio.play( buttonSound )
 			playUI[0].alpha = 1
 			playUI[1].alpha = 0
 
@@ -160,7 +174,7 @@ function scene:create( event )
 		    timer.pause(resetTimer)
 		end
 
-		local function tapX( ... )
+		local function tapX( ... ) -- 굳이 없어도될듯??
 			for i = 0, #UI do
 				UI[i].alpha = 0
 			end
@@ -169,7 +183,7 @@ function scene:create( event )
 		playUI[0]:addEventListener("tap", tapPlay)
 		playUI[1]:addEventListener("tap", tapStop)
 		UI[1]:addEventListener("tap", tapPlay)
-		UI[2]:addEventListener("tap", tapX)
+		UI[2]:addEventListener("tap", tapPlay) 
 
     -- SCORE
 	    local function scoreUp ( event )
@@ -191,29 +205,45 @@ function scene:create( event )
 	    dino:addEventListener( "sprite", dino_spriteListenr )
 
 	    -- 점프/슬라이드
-	    local function playerDown( event )
-	    	transition.to( dino, { time=500,  y=(dino.y+150) } )
+	    local isJump = 0
+
+	    local function endJump( event )
+	    	isJump = 0
+	    	dino:setSequence( "run" )
+	    	dino:play()
+		 	print("run")
 	    end
+
+	    local function playerDown( event )
+	    	transition.to( dino, { time=1500,  y=(dino.y+200), onComplete = endJump } )
+	    end	    
 
 		local function onKeyJumpEvent( event )
 		 	if ( event.keyName == "space" ) and ( event.phase == "down" ) and (dino.y == h) then
-		 		transition.to( dino, { time=500,  y=(dino.y-150), onComplete = playerDown } )
+		 		isJump = 1
+		 		audio.play( jumpSound )
+		 		transition.to( dino, { time=300,  y=(dino.y-200), onComplete = playerDown } )
 		 		dino:setSequence( "jump" )
 		 		print("jump")
 		    end
 		end
 
 		local function onKeySlideEvent( event )
-		 	if ( event.keyName == "down" ) and ( event.phase == "down" ) then
-		 		transition.pause( dino )
-	    		dino.y = display.contentHeight*0.5
-		 		dino:setSequence( "slide" )
-		 		print("slide")
-		    end
-		    if ( event.keyName == "down" ) and ( event.phase == "up" ) then
-	 			dino:setSequence( "run" )
-	 		end
-	 		dino:play()
+			if (isJump == 0) then
+			 	if ( event.keyName == "down" ) and ( event.phase == "down" ) then -- 눌렀을 때
+			 		audio.play( landSound )
+			 		transition.pause( dino )
+		    		dino.y = dino.y + 50
+			 		dino:setSequence( "slide" )
+			 		print("slide")
+			    end
+			    if ( event.keyName == "down" ) and ( event.phase == "up" ) then -- 눌렀다 뗄때
+			    	dino.y = dino.y - 50
+		 			dino:setSequence( "run" )
+		 			print("run")
+		 		end
+		 		dino:play()
+		 	end
 		end
 
 		Runtime:addEventListener( "key", onKeyJumpEvent )
@@ -242,26 +272,47 @@ function scene:create( event )
 		function spawn_obstacle ()
 			print("spawn obstacle")
 
-			physics.addBody( obstacle[obs_idx], "dynamic" )
+			physics.addBody( obstacle[obs_idx], "dynamic", {friction=0})
 			obstacle[obs_idx]:setLinearVelocity( -500, 0 )--장애물 이동
-
 			resetTimer = timer.performWithDelay(4000, obs_reset)
 		end
 
+	-- 충돌 구현 
+		local function onCollision( event ) 
+		    if ( event.phase == "began" ) then
+		    	audio.play( dieSound )
+		        dino:setSequence( "hurt" )
+		 		print("hurt")
+
+		 		Runtime:removeEventListener( "key", onKeyJumpEvent )
+				Runtime:removeEventListener( "key", onKeySlideEvent )
+				Runtime:removeEventListener( "collision", onCollision )
+		 		
+		 		composer.setVariable( "score", score )
+				composer.gotoScene( "end", { time=800, effect="crossFade" } )
+		    end
+		end
 
 -- 함수 호출부 (게임 시작할때 호출하는 함수) --
-	-- 점수&애니메이션에서 추가
-	scoreEvent = timer.performWithDelay( 250, scoreUp, 0 )
+	
+
+	-- 장애물 이동에서 추가
+	physics.start()
+	physics.setGravity( 0, 0 )
+	obs_start()
 	
 	dino:setSequence( "run" )
 	dino:play()
+	physics.addBody(dino, "static", {friction=0})
 
-	-- 장애물 이동에서 추가
-	obs_start()
+	
+	 
+	Runtime:addEventListener( "collision", onCollision )
 
-	physics.start()
-	physics.setGravity( 0, 0 )
+	-- 점수&애니메이션에서 추가
+	scoreEvent = timer.performWithDelay( 250, scoreUp, 0 )
 
+	
 
 -- 레이어(sceneGroup) 정리 --
 	sceneGroup:insert( BGUI )
@@ -288,11 +339,15 @@ end
 function scene:hide( event )
 	local sceneGroup = self.view
 	local phase = event.phase
-	physics.phase()
 
 	if event.phase == "will" then
+		timer.cancel( scoreEvent )
+		timer.cancel( spawnTimer )
+		timer.cancel( resetTimer )
 	elseif phase == "did" then
-
+		physics.pause()
+		audio.stop( 1 )
+		composer.removeScene( "view1" )
 	end
 end
 
