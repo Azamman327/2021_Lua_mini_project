@@ -12,12 +12,18 @@ function scene:create( event )
 	local background = display.newRect( display.contentCenterX, display.contentCenterY, display.contentWidth, display.contentHeight )
 
 	local getScore = composer.getVariable("score")
-	local textScore = display.newText(getScore, display.contentWidth/2, display.contentHeight/2)
-    textScore:setFillColor(0)
-    textScore.size = 100
+	local scoreUI = display.newText(getScore, display.contentWidth/2, display.contentHeight/2)
+    scoreUI:setFillColor(0)
+    scoreUI.size = 100
+
+	local function onScoreTap()
+		composer.gotoScene("start")
+	end
+
+    scoreUI:addEventListener("tap", onScoreTap)
 
     sceneGroup:insert( background )
-    sceneGroup:insert( textScore )
+    sceneGroup:insert( scoreUI )
 end
 
 function scene:show( event )

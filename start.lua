@@ -14,11 +14,11 @@ function scene:create( event )
 	local background = display.newRect(640, 360, 1280, 720)
 
 	-- 시작
-	local function playGame()
+	local function onStartTap()
 		composer.gotoScene("game")
 	end
 	local startUI = widget.newButton({ defaultFile = "Content/start.png", overFile = "Content/start_over.png",
-		x = display.contentWidth/2, y = display.contentHeight/2+100, onRelease = playGame })
+		x = display.contentWidth/2, y = display.contentHeight/2+100, onRelease = onStartTap })
 
 	sceneGroup:insert(background)
 	sceneGroup:insert(startUI)

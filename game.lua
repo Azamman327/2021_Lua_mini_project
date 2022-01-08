@@ -341,6 +341,7 @@ function scene:hide( event )
 		timer.cancel( resetTimer )
 	elseif phase == "did" then
 		physics.pause()
+		transition.cancelAll()
 		composer.removeScene( "game" )
 	end
 end
