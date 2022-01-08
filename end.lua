@@ -11,12 +11,13 @@ function scene:create( event )
 	local sceneGroup = self.view
 	local background = display.newRect( display.contentCenterX, display.contentCenterY, display.contentWidth, display.contentHeight )
 
-	sceneGroup:insert( background )
 	local getScore = composer.getVariable("score")
 	local textScore = display.newText(getScore, display.contentWidth/2, display.contentHeight/2)
     textScore:setFillColor(0)
     textScore.size = 100
 
+    sceneGroup:insert( background )
+    sceneGroup:insert( textScore )
 end
 
 function scene:show( event )
