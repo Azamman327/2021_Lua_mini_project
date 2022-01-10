@@ -93,7 +93,7 @@ function scene:create( event )
 		dinoOutline.down = graphics.newOutline(2, dinoSheet, 5)
 
 		dino = display.newSprite( dinoSheet, sepuencesData )
-		dino.x, dino.y = display.contentWidth*0.2, display.contentHeight*0.5
+		dino.x, dino.y = display.contentWidth*0.2, display.contentHeight/2
 
 	-- OBSTACLE
 		local obstacleGroup = display.newGroup();
@@ -113,9 +113,6 @@ function scene:create( event )
 			obstacle[i].x, obstacle[i].y = display.contentWidth+200, display.contentHeight-280
 		end
 		obstacle[4].x, obstacle[4].y = display.contentWidth+200, 200
-
-		local cooltime
-		local obs_idx
 
 -- 함수 선언부 --
     -- UI
@@ -146,15 +143,17 @@ function scene:create( event )
 				UI[i].alpha = 0
 			end
 
-			-- 점수&애니메이션에서 추가 ☆
 			timer.resume( scoreEvent )
 			dino:setSequence( "run" )
 		    dino:play()
 
-		    -- 장애물 이동에서 추가 ☆
 		    physics.start()
 		    timer.resume( spawnTimer )
 		    timer.resume( resetTimer )
+
+		    Runtime:addEventListener( "key", onKeyJumpEvent )
+			Runtime:addEventListener( "key", onKeyDownEvent )
+			print("resume")
 		end
 
 		local function gamePause()
@@ -166,15 +165,20 @@ function scene:create( event )
 				UI[i].alpha = 1
 			end
 
-			-- 점수&애니메이션에서 추가 ☆
 		   	timer.pause( scoreEvent )			
 			dino:setSequence( "idle" )
 		    dino:pause()
 
-		   	-- 장애물 이동에서 추가 ☆
 		    physics.pause()
+		    transition.cancelAll()
+		    dino.y = display.contentHeight/2
+
 		    timer.pause( spawnTimer )
 		    timer.pause( resetTimer )
+
+		 	Runtime:removeEventListener( "key", onKeyJumpEvent )
+			Runtime:removeEventListener( "key", onKeyDownEvent )
+			print("pause")
 		end
 
 		playUI[0]:addEventListener("tap", gameResume)
@@ -203,7 +207,6 @@ function scene:create( event )
 
 	    -- 점프/슬라이드
 	    local isJump = 0
-	    local w,h = display.contentWidth, display.contentHeight/2
 
 	    local function dinoJumpEnd( event )
 	    	isJump = 0
@@ -214,10 +217,10 @@ function scene:create( event )
 
 	    local function dinoJumpDown( event )
 	    	transition.to( dino, { time=1500,  y=(dino.y+200), onComplete = dinoJumpEnd } )
-	    end	    
+	    end
 
-		local function onKeyJumpEvent( event )
-		 	if ( event.keyName == "space" ) and ( event.phase == "down" ) and (dino.y == h) then
+		function onKeyJumpEvent( event )
+		 	if ( event.keyName == "space" ) and ( event.phase == "down" ) and (dino.y == display.contentHeight/2) then
 		 		isJump = 1
 		 		audio.play( se.jump )
 		 		transition.to( dino, { time=300,  y=(dino.y-200), onComplete = dinoJumpDown } )
@@ -226,13 +229,13 @@ function scene:create( event )
 		    end
 		end
 
-		local function onKeydownEvent( event )
+		function onKeyDownEvent( event )
 			if (isJump == 0) then
 			 	if ( event.keyName == "down" ) and ( event.phase == "down" ) then -- 눌렀을 때
 			 		audio.play( se.down )
 			 		transition.pause( dino )
 			 		dino:setSequence( "down" )
-			 		dino.y = h
+			 		dino.y = display.contentHeight/2
 
 			 		physics.removeBody( dino )
 			 		physics.addBody(dino, "static", { friction=0, outline=dinoOutline.down }) 
@@ -249,9 +252,12 @@ function scene:create( event )
 		end
 
 		Runtime:addEventListener( "key", onKeyJumpEvent )
-		Runtime:addEventListener( "key", onKeydownEvent )
+		Runtime:addEventListener( "key", onKeyDownEvent )
 
 	-- OBSTACLE
+		local cooltime
+		local obs_idx
+
 		function createObstacle()
 			cooltime = math.random(1, 4)-- 0.5~2초 사이의 간격으로 스폰
 			obs_idx = math.random(1, 4)	-- 1~5번 장애물 중 랜덤선택
@@ -272,7 +278,7 @@ function scene:create( event )
 			print("spawn obstacle")
 			physics.addBody( obstacle[obs_idx], "dynamic", { friction=0, outline=obstacleOutline[obs_idx] })
 			obstacle[obs_idx]:setLinearVelocity( -500, 0 )	-- 장애물 이동
-			resetTimer = timer.performWithDelay(4000, deleteObstacle)
+			resetTimer = timer.performWithDelay(5000, deleteObstacle)
 		end
 
 	-- 충돌 구현 
@@ -283,7 +289,7 @@ function scene:create( event )
 		 		print("collide")
 
 		 		Runtime:removeEventListener( "key", onKeyJumpEvent )
-				Runtime:removeEventListener( "key", onKeydownEvent )
+				Runtime:removeEventListener( "key", onKeyDownEvent )
 				Runtime:removeEventListener( "collision", onCollision )
 		 		
 		 		composer.setVariable( "score", score )
@@ -300,6 +306,7 @@ function scene:create( event )
 	
 	dino:setSequence( "run" )
 	dino:play()
+
 	physics.addBody(dino, "static", { friction=0, outline=dinoOutline.idle }) 
 	Runtime:addEventListener( "collision", onCollision )
 
