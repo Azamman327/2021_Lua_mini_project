@@ -84,8 +84,8 @@ function scene:create( event )
 		{
 			{ name = "idle",	start = 1, count = 1 },
 			{ name = "run",  	start = 1, count = 3, time = 400 },
-			{ name = "jump", 	start = 4, count = 1, loopCount = 1, time = 1000 },
-			{ name = "down", 	start = 5, count = 1, time = 400 },
+			{ name = "jump", 	start = 4, count = 1 },
+			{ name = "down", 	start = 5, count = 1 },
 			{ name = "collide", start = 6, count = 1 }
 		}
 		local dinoOutline = {}
@@ -93,7 +93,7 @@ function scene:create( event )
 		dinoOutline.down = graphics.newOutline(2, dinoSheet, 5)
 
 		dino = display.newSprite( dinoSheet, sepuencesData )
-		dino.x, dino.y = display.contentWidth*0.2, display.contentHeight/2
+		dino.x, dino.y = display.contentWidth*0.2, display.contentHeight*0.5
 
 	-- OBSTACLE
 		local obstacleGroup = display.newGroup();
@@ -193,19 +193,6 @@ function scene:create( event )
 	    end
 
     -- DINO
-	    local function dinoSpriteListener( event )
-	    	if event.phase == "began" then
-		    	if dino.sequence == "collide" then
-		    		dino.alpha = 0.8
-		    	end
-	    	elseif event.phase == "ended" then
-		    	dino:setSequence( "run" )
-		    	dino:play()
-	    	end
-	    end
-	    dino:addEventListener( "sprite", dinoSpriteListener )
-
-	    -- 점프/슬라이드
 	    local isJump = 0
 
 	    local function dinoJumpEnd( event )
@@ -278,7 +265,7 @@ function scene:create( event )
 			print("spawn obstacle")
 			physics.addBody( obstacle[obs_idx], "dynamic", { friction=0, outline=obstacleOutline[obs_idx] })
 			obstacle[obs_idx]:setLinearVelocity( -500, 0 )	-- 장애물 이동
-			resetTimer = timer.performWithDelay(5000, deleteObstacle)
+			resetTimer = timer.performWithDelay(4000, deleteObstacle)
 		end
 
 	-- 충돌 구현 
